@@ -497,10 +497,14 @@ export default function FilesPage() {
               {/* Download button - only for files, not folders */}
               {permissions?.canDownload && selectedFileCount > 0 && (
                 <Button
-                  variant="primary"
+                  variant="accent"
                   onPress={handleBulkDownload}
                   isPending={isDownloading}
-                  UNSAFE_style={{ minWidth: 'auto' }}
+                  UNSAFE_style={{ 
+                    minWidth: 'auto',
+                    backgroundColor: '#0ea5e9',
+                    borderColor: '#0ea5e9',
+                  }}
                 >
                   <Download size="S" />
                   {!isMobile && <Text>{t('download')}</Text>}
