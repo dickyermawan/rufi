@@ -1,185 +1,170 @@
-# Rufi - S3 File Manager
+# Rufi - S3 File Manager ☁️
 
-A modern, multi-provider S3 file manager with user management and granular permissions.
+A modern, high-performance, multi-provider S3 file manager designed for speed and usability. Built with **Next.js**, **React Spectrum**, and **Prisma**.
 
-## Features
+Rufi provides a beautiful, responsive interface to manage your S3 buckets (Cloudflare R2, AWS S3, MinIO) with granular user permissions, file previews, and advanced management features.
 
-- **Multi-provider S3 Support**: Cloudflare R2, AWS S3, MinIO, and any S3-compatible storage
-- **File Operations**: List, upload, download, delete, rename, copy, create folders
-- **Text Editor**: Edit text files directly in the browser with syntax highlighting
-- **File Preview**: Preview images, videos, audio, PDFs, and text files
-- **User Management**: Create users with custom permissions per bucket
-- **Granular Permissions**: 9 different permission types per user per bucket
-- **Home Directory**: Restrict users to specific directories within buckets
-- **Public Sharing**: Generate shareable links with optional password and expiry
-- **Multi-language**: English and Indonesian (easily extensible)
-- **Dark Mode**: Toggle between light and dark themes
-- **Docker Ready**: Easy deployment with Docker Compose
+---
 
-## Tech Stack
+## ✨ Features
 
-- **Frontend**: Next.js 14 (App Router), React, TypeScript
-- **UI**: Adobe React Spectrum
-- **Backend**: Next.js API Routes
-- **Database**: SQLite (via Prisma ORM)
-- **Authentication**: JWT with httpOnly cookies
-- **S3 Client**: AWS SDK v3
+### 🚀 Core Capabilities
+- **Multi-provider Support**: Connect seamlessly with Cloudflare R2, AWS S3, MinIO, and any S3-compatible storage.
+- **Full File Operations**: Upload, download, list, delete, rename, copy/move files and folders.
+- **Drag & Drop Upload**: Upload files and folders effortlessly by dragging them onto the interface. Includes progress tracking.
+- **Smart Search**: Quickly find files in the current folder with prefix search (supports debounce).
+- **Pagination**: Efficiently browse folders with thousands of files using "Load More" functionality.
 
-## Quick Start
+### 🎨 User Interface & Experience
+- **Responsive Design**: Fully optimized for Desktop, Tablet, and Mobile devices.
+- **View Modes**: Switch between Grid and List views (persisted in local storage).
+- **File Previews**: Built-in preview for Images, Videos, Audio, PDF, and Text files.
+- **Code Editor**: Edit text/code files directly in the browser with syntax highlighting.
+- **Dark Mode**: Automatic or manual toggle for Dark/Light theme.
+
+### 🛡️ Security & Management
+- **User Management**: Create multiple users with role-based access.
+- **Granular Permissions**: 9 distinct permission levels per bucket (List, Upload, Delete, Share, etc.).
+- **Home Directories**: Restrict users to specific folders within a bucket.
+- **Public Sharing**: Generate secure public links with optional password protection and expiration dates.
+
+---
+
+## 🐳 Quick Start with Docker
+
+The easiest way to run Rufi is using Docker. We provide a pre-built image on Docker Hub.
 
 ### Prerequisites
+- Docker and Docker Compose installed on your machine.
 
-- Node.js 20+
-- npm or yarn
+### Deployment Steps
 
-### Installation
+1. **Create a `docker-compose.yml` file:**
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/rufi.git
-cd rufi
+```yaml
+version: '3.8'
+
+services:
+  rufi:
+    image: dickyermawan/rufi:v1.0.0
+    container_name: rufi
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data  # Persist database
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/rufi.db
+      - APP_URL=http://localhost:3000
+      - JWT_SECRET=change_this_to_a_secure_random_string
+      - ENCRYPTION_KEY=change_this_to_exactly_32_characters_long
+      - ROOT_USERNAME=admin
+      - ROOT_PASSWORD=admin123
+    restart: unless-stopped
 ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+2. **Start the application:**
 
-3. Configure environment:
-```bash
-cp .env.example .env
-# Edit .env with your settings
-```
-
-4. Initialize database:
-```bash
-npx prisma migrate deploy
-npx prisma generate
-```
-
-5. Start development server:
-```bash
-npm run dev
-```
-
-6. Open http://localhost:3000 and login with the root credentials from `.env`
-
-### Docker Deployment
-
-1. Configure environment:
-```bash
-cp .env.example .env
-# Edit .env with your production settings
-```
-
-2. Build and run:
 ```bash
 docker-compose up -d
 ```
 
-## Configuration
+3. **Access Rufi:**
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+   Login with the credentials defined in `ROOT_USERNAME` and `ROOT_PASSWORD`.
+
+---
+
+## 🛠️ Manual Installation
+
+If you prefer to run it without Docker:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/dickyermawan/rufi.git
+   cd rufi
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment:**
+   Copy `.env.example` to `.env` and update the values.
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Initialize Database:**
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+5. **Run Development Server:**
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## ⚙️ Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment mode | `development` |
-| `APP_URL` | Application URL | `http://localhost:3000` |
-| `JWT_SECRET` | Secret for JWT tokens | (required) |
-| `ENCRYPTION_KEY` | Key for encrypting S3 secrets | (required) |
-| `ROOT_USERNAME` | Initial admin username | `admin` |
-| `ROOT_PASSWORD` | Initial admin password | `admin123` |
-| `DATABASE_URL` | SQLite database path | `file:./data/rufi.db` |
+| Variable | Description | Default | Required |
+|----------|-------------|---------|:--------:|
+| `NODE_ENV` | Environment mode (development/production) | `development` | No |
+| `APP_URL` | Base URL of the application | `http://localhost:3000` | No |
+| `JWT_SECRET` | Secret key for signing session tokens | - | **Yes** |
+| `ENCRYPTION_KEY` | 32-char key for encrypting S3 credentials | - | **Yes** |
+| `ROOT_USERNAME` | Initial Administrator Username | `admin` | No |
+| `ROOT_PASSWORD` | Initial Administrator Password | `admin123` | No |
+| `DATABASE_URL` | Database connection string (SQLite) | `file:./data/rufi.db` | No |
 
-### Adding S3 Providers
+### Adding Buckets (S3 Providers)
 
-After logging in as root:
+1. Log in as **Admin**.
+2. Navigate to **Buckets** sidebar menu.
+3. Click **Add Bucket** (+).
+4. Fill in your S3 details:
+   - **Name**: Display name for the bucket.
+   - **Endpoint**: 
+     - R2: `https://<account_id>.r2.cloudflarestorage.com`
+     - AWS: `https://s3.<region>.amazonaws.com`
+   - **Access Key & Secret Key**: Your S3 credentials.
+   - **Region**: e.g., `auto`, `us-east-1`.
+5. Click **Test Connection** to verify, then **Create**.
 
-1. Go to **Buckets** in the sidebar
-2. Click **Add Bucket**
-3. Enter your S3 provider details:
-   - **Cloudflare R2**: `https://<account-id>.r2.cloudflarestorage.com`
-   - **AWS S3**: `https://s3.<region>.amazonaws.com`
-   - **MinIO**: `http://localhost:9000`
-4. Test connection and save
+---
 
-### User Permissions
+## 📖 User Guide
 
-Each user can have different permissions per bucket:
-
-| Permission | Description |
-|------------|-------------|
-| List | View files and folders |
-| Upload | Upload new files |
-| Download | Download files |
-| Delete | Delete files and folders |
-| Rename | Rename and move files |
-| Copy | Copy files |
-| Create Folder | Create new folders |
-| Edit | Edit text files |
-| Share | Create public share links |
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout
-- `GET /api/auth/me` - Get current user
-
-### Files
-- `GET /api/files` - List files
-- `DELETE /api/files` - Delete files
-- `POST /api/files/folder` - Create folder
-- `POST /api/files/upload-url` - Get presigned upload URL
-- `GET /api/files/download-url` - Get presigned download URL
-- `GET /api/files/content` - Get file content (text)
-- `PUT /api/files/content` - Save file content
-- `POST /api/files/rename` - Rename file
-- `POST /api/files/copy` - Copy file
-
-### Users (Admin only)
-- `GET /api/users` - List users
-- `POST /api/users` - Create user
-- `PUT /api/users` - Update user
-- `DELETE /api/users` - Delete user
-- `GET /api/users/access` - Get user bucket access
-- `POST /api/users/access` - Set user bucket access
-
-### Buckets (Admin only)
-- `GET /api/buckets` - List buckets
-- `POST /api/buckets` - Create bucket
-- `PUT /api/buckets` - Update bucket
-- `DELETE /api/buckets` - Delete bucket
-- `POST /api/buckets/test` - Test bucket connection
+### File Management
+- **Navigation**: Click folders to navigate. Use breadcrumbs to go back.
+- **Search**: Type in the search bar at the top to filter files in the current folder.
+- **Upload**: Drag files anywhere onto the screen or use the **Upload** button.
+- **Bulk Actions**: Select multiple files (checkbox or Ctrl+Click) to **Delete** or **Download** in bulk.
 
 ### Sharing
-- `GET /api/share` - List user's shared links
-- `POST /api/share` - Create shared link
-- `DELETE /api/share` - Delete shared link
-- `GET /api/share/[token]` - Access shared file
+- Right-click any file and select **Share**.
+- Set an optional **Password** or **Expiration Time**.
+- Copy the link and send it to anyone!
 
-## Development
+---
 
-```bash
-# Run development server
-npm run dev
+## 🤝 Contributing
 
-# Build for production
-npm run build
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-# Run production server
-npm start
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-# Run Prisma Studio (database browser)
-npx prisma studio
+---
 
-# Generate Prisma client after schema changes
-npx prisma generate
+## 📄 License
 
-# Create migration after schema changes
-npx prisma migrate dev --name <migration-name>
-```
-
-## License
-
-MIT
+Distributed under the MIT License. See `LICENSE` for more information.
