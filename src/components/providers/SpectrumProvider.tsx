@@ -1,7 +1,7 @@
 'use client';
 
 import { Provider, defaultTheme } from '@adobe/react-spectrum';
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useState, useEffect } from 'react';
 
 // External store for color scheme
 let colorScheme: 'light' | 'dark' = 'light';
@@ -40,11 +40,19 @@ if (typeof window !== 'undefined') {
 }
 
 export function SpectrumProvider({ children }: { children: React.ReactNode }) {
+  const [isMounted, setIsMounted] = useState(false);
   const currentColorScheme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Use effective color scheme: light during SSR/hydration, actual scheme after mount
+  const effectiveColorScheme = isMounted ? currentColorScheme : 'light';
+
   return (
-    <Provider theme={defaultTheme} colorScheme={currentColorScheme} locale="en-US">
-      <div className={`spectrum-theme ${currentColorScheme === 'dark' ? 'dark' : ''}`}>
+    <Provider theme={defaultTheme} colorScheme={effectiveColorScheme} locale="en-US">
+      <div className={`spectrum-theme ${effectiveColorScheme === 'dark' ? 'dark' : ''}`}>
         {children}
       </div>
     </Provider>
