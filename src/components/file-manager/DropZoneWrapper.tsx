@@ -206,9 +206,11 @@ export function DropZoneWrapper({ bucketId, path, canUpload, onUploadComplete, c
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      style={{ position: 'relative', height: '100%' }}
+      style={{ position: 'relative', minHeight: '100%', display: 'flex', flexDirection: 'column' }}
     >
-      {children}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {children}
+      </div>
 
       {/* Drag overlay */}
       {isDragging && canUpload && (

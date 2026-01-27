@@ -490,10 +490,6 @@ export default function FilesPage() {
             {!hasMore && selectedCount > 0 && (
               <View UNSAFE_style={{ height: '160px' }} />
             )}
-            {/* Padding for floating action bar */}
-            {!hasMore && selectedCount > 0 && (
-              <View height="size-1000" />
-            )}
           </View>
         )}
       </View>
