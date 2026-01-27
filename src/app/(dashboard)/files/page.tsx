@@ -209,7 +209,7 @@ export default function FilesPage() {
 
     setIsDownloading(true);
     try {
-      // Download files one by one
+      // Download files one by one using fetch + blob to force download
       for (const key of fileKeys) {
         const file = files.find(f => f.key === key);
         if (!file) continue;
@@ -222,16 +222,24 @@ export default function FilesPage() {
         const data = await response.json();
 
         if (data.url) {
-          // Create a temporary link and click it
+          // Fetch the file as blob and force download
+          const fileResponse = await fetch(data.url);
+          const blob = await fileResponse.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          
           const link = document.createElement('a');
-          link.href = data.url;
+          link.href = blobUrl;
           link.download = file.name;
+          link.style.display = 'none';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
           
+          // Clean up blob URL
+          URL.revokeObjectURL(blobUrl);
+          
           // Small delay between downloads
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
     } catch (error) {
@@ -377,69 +385,6 @@ export default function FilesPage() {
         </Flex>
       </Flex>
 
-      {/* Selection Action Bar */}
-      {selectedCount > 0 && (
-        <View
-          padding="size-150"
-          borderRadius="medium"
-          marginBottom="size-200"
-          UNSAFE_style={{
-            backgroundColor: 'var(--spectrum-global-color-blue-100)',
-            border: '1px solid var(--spectrum-global-color-blue-400)',
-          }}
-        >
-          <Flex 
-            alignItems="center" 
-            justifyContent="space-between"
-            wrap="wrap"
-            gap="size-100"
-          >
-            <Flex alignItems="center" gap="size-100">
-              <Text UNSAFE_style={{ fontWeight: 'bold' }}>
-                {selectedCount} {t('selected')}
-              </Text>
-              <ActionButton isQuiet onPress={clearSelection} aria-label={t('clearSelection')}>
-                <Close size="S" />
-              </ActionButton>
-            </Flex>
-
-            <Flex gap="size-100">
-              {/* Download button - only for files, not folders */}
-              {permissions?.canDownload && selectedFileCount > 0 && (
-                <Button
-                  variant="secondary"
-                  onPress={handleBulkDownload}
-                  isPending={isDownloading}
-                >
-                  <Download size="S" />
-                  <Text>{t('download')} ({selectedFileCount})</Text>
-                </Button>
-              )}
-
-              {/* Delete button */}
-              {permissions?.canDelete && (
-                <DialogTrigger>
-                  <Button variant="negative">
-                    <Delete size="S" />
-                    <Text>{t('delete')} ({selectedCount})</Text>
-                  </Button>
-                  <AlertDialog
-                    variant="destructive"
-                    title={t('deleteConfirmTitle')}
-                    primaryActionLabel={t('delete')}
-                    cancelLabel={t('cancel')}
-                    onPrimaryAction={handleBulkDelete}
-                    isPrimaryActionDisabled={isDeleting}
-                  >
-                    {t('deleteMultipleConfirm', { count: selectedCount })}
-                  </AlertDialog>
-                </DialogTrigger>
-              )}
-            </Flex>
-          </Flex>
-        </View>
-      )}
-
       {/* File Browser */}
       {isLoading ? (
         <Flex alignItems="center" justifyContent="center" height="size-3000">
@@ -507,6 +452,85 @@ export default function FilesPage() {
         />
       )}
     </View>
+
+    {/* Floating Selection Action Bar */}
+    {selectedCount > 0 && (
+      <div
+        style={{
+          position: 'fixed',
+          bottom: isMobile ? '70px' : '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          width: isMobile ? 'calc(100% - 32px)' : 'auto',
+          maxWidth: '600px',
+        }}
+      >
+        <View
+          padding="size-150"
+          borderRadius="large"
+          UNSAFE_style={{
+            backgroundColor: 'var(--spectrum-global-color-gray-900)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          }}
+        >
+          <Flex 
+            alignItems="center" 
+            justifyContent="space-between"
+            gap="size-200"
+          >
+            <Flex alignItems="center" gap="size-100">
+              <ActionButton 
+                isQuiet 
+                onPress={clearSelection} 
+                aria-label={t('clearSelection')}
+                UNSAFE_style={{ color: 'white' }}
+              >
+                <Close size="S" />
+              </ActionButton>
+              <Text UNSAFE_style={{ fontWeight: 'bold', color: 'white', whiteSpace: 'nowrap' }}>
+                {selectedCount} {t('selected')}
+              </Text>
+            </Flex>
+
+            <Flex gap="size-100">
+              {/* Download button - only for files, not folders */}
+              {permissions?.canDownload && selectedFileCount > 0 && (
+                <Button
+                  variant="primary"
+                  onPress={handleBulkDownload}
+                  isPending={isDownloading}
+                  UNSAFE_style={{ minWidth: 'auto' }}
+                >
+                  <Download size="S" />
+                  {!isMobile && <Text>{t('download')}</Text>}
+                </Button>
+              )}
+
+              {/* Delete button */}
+              {permissions?.canDelete && (
+                <DialogTrigger>
+                  <Button variant="negative" UNSAFE_style={{ minWidth: 'auto' }}>
+                    <Delete size="S" />
+                    {!isMobile && <Text>{t('delete')}</Text>}
+                  </Button>
+                  <AlertDialog
+                    variant="destructive"
+                    title={t('deleteConfirmTitle')}
+                    primaryActionLabel={t('delete')}
+                    cancelLabel={t('cancel')}
+                    onPrimaryAction={handleBulkDelete}
+                    isPrimaryActionDisabled={isDeleting}
+                  >
+                    {t('deleteMultipleConfirm', { count: selectedCount })}
+                  </AlertDialog>
+                </DialogTrigger>
+              )}
+            </Flex>
+          </Flex>
+        </View>
+      </div>
+    )}
     </DropZoneWrapper>
   );
 }
