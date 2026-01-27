@@ -33,7 +33,7 @@
 
 | Desktop View (Grid) | Mobile View (List) |
 |:---:|:---:|
-| <img src="https://placehold.co/800x500/e0e0e0/333333?text=Desktop+File+Manager" alt="Desktop View" width="100%"> | <img src="https://placehold.co/300x600/e0e0e0/333333?text=Mobile+View" alt="Mobile View" width="100%"> |
+| <img src="ss/desktop_view.png" alt="Desktop View" width="100%"> | <img src="ss/mobile_view.png" alt="Mobile View" width="100%"> |
 
 > *Experience a responsive design that adapts perfectly to any device.*
 
