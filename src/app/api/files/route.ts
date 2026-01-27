@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const bucketId = searchParams.get('bucketId');
     const path = searchParams.get('path') || '/';
+    const continuationToken = searchParams.get('continuationToken') || undefined;
+    const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
 
     if (!bucketId) {
       return NextResponse.json({ error: 'Bucket ID required' }, { status: 400 });
@@ -75,14 +77,17 @@ export async function GET(request: NextRequest) {
       bucket: bucket.name,
     });
 
-    // List objects
+    // List objects with pagination
     const prefix = effectivePath === '/' ? '' : effectivePath.replace(/^\//, '');
-    const { files, folders } = await listObjects(client, bucket.name, prefix);
+    const result = await listObjects(client, bucket.name, prefix, '/', {
+      maxKeys: pageSize,
+      continuationToken,
+    });
 
     // Combine and sort
     const allFiles = [
-      ...folders.map(f => ({ ...f, type: 'folder' as const })),
-      ...files.map(f => ({ ...f, type: 'file' as const })),
+      ...result.folders.map(f => ({ ...f, type: 'folder' as const })),
+      ...result.files.map(f => ({ ...f, type: 'file' as const })),
     ].sort((a, b) => {
       if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
       return a.name.localeCompare(b.name);
@@ -93,6 +98,11 @@ export async function GET(request: NextRequest) {
       files: allFiles,
       permissions,
       currentPath: normalizedPath,
+      pagination: {
+        hasMore: result.isTruncated,
+        nextToken: result.nextContinuationToken,
+        pageSize,
+      },
     });
   } catch (error) {
     console.error('List files error:', error);

@@ -57,9 +57,15 @@ export default function FilesPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState('/');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [permissions, setPermissions] = useState<Permission | null>(null);
+  
+  // Pagination state
+  const [hasMore, setHasMore] = useState(false);
+  const [nextToken, setNextToken] = useState<string | null>(null);
+  const PAGE_SIZE = 50;
 
   // Modal states
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
@@ -77,28 +83,58 @@ export default function FilesPage() {
     file: FileItem;
   } | null>(null);
 
-  const loadFiles = useCallback(async () => {
+  const loadFiles = useCallback(async (append = false, token?: string) => {
     if (!selectedBucket) return;
 
-    setIsLoading(true);
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+      setFiles([]);
+      setNextToken(null);
+      setHasMore(false);
+    }
+    
     try {
       const params = new URLSearchParams({
         bucketId: selectedBucket,
         path: currentPath,
+        pageSize: PAGE_SIZE.toString(),
       });
+      if (token) {
+        params.set('continuationToken', token);
+      }
+      
       const response = await fetch(`/api/files?${params}`);
       const data = await response.json();
 
       if (data.success) {
-        setFiles(data.files);
+        if (append) {
+          setFiles(prev => [...prev, ...data.files]);
+        } else {
+          setFiles(data.files);
+        }
         setPermissions(data.permissions);
+        setHasMore(data.pagination?.hasMore || false);
+        setNextToken(data.pagination?.nextToken || null);
       }
     } catch (error) {
       console.error('Failed to load files:', error);
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   }, [selectedBucket, currentPath]);
+
+  const refreshFiles = () => {
+    loadFiles(false);
+  };
+
+  const loadMore = () => {
+    if (nextToken && !isLoadingMore) {
+      loadFiles(true, nextToken);
+    }
+  };
 
   useEffect(() => {
     loadFiles();
@@ -281,7 +317,7 @@ export default function FilesPage() {
       bucketId={selectedBucket}
       path={currentPath}
       canUpload={permissions?.canUpload ?? false}
-      onUploadComplete={loadFiles}
+      onUploadComplete={refreshFiles}
     >
       <View height="100%">
       {/* Toolbar */}
@@ -366,7 +402,7 @@ export default function FilesPage() {
           )}
 
           <TooltipTrigger>
-            <ActionButton onPress={loadFiles} aria-label={t('refresh')}>
+            <ActionButton onPress={refreshFiles} aria-label={t('refresh')}>
               <Refresh />
             </ActionButton>
             <Tooltip>{t('refresh')}</Tooltip>
@@ -386,33 +422,53 @@ export default function FilesPage() {
       </Flex>
 
       {/* File Browser */}
-      {isLoading ? (
-        <Flex alignItems="center" justifyContent="center" height="size-3000">
-          <ProgressCircle aria-label="Loading..." isIndeterminate />
-        </Flex>
-      ) : files.length === 0 ? (
-        <View padding="size-500" UNSAFE_style={{ textAlign: 'center' }}>
-          <Text>{t('emptyFolder')}</Text>
-        </View>
-      ) : viewMode === 'grid' ? (
-        <FileGrid
-          files={files}
-          selectedFiles={selectedFiles}
-          onFileClick={handleFileClick}
-          onFileDoubleClick={handleFileDoubleClick}
-          onContextMenu={handleContextMenu}
-          onSelectAll={handleSelectAll}
-        />
-      ) : (
-        <FileList
-          files={files}
-          selectedFiles={selectedFiles}
-          onFileClick={handleFileClick}
-          onFileDoubleClick={handleFileDoubleClick}
-          onContextMenu={handleContextMenu}
-          onSelectAll={handleSelectAll}
-        />
-      )}
+      <View flex={1} UNSAFE_style={{ display: 'flex', flexDirection: 'column' }}>
+        {isLoading ? (
+          <Flex alignItems="center" justifyContent="center" height="size-3000">
+            <ProgressCircle aria-label="Loading..." isIndeterminate />
+          </Flex>
+        ) : files.length === 0 ? (
+          <View padding="size-500" UNSAFE_style={{ textAlign: 'center' }}>
+            <Text>{t('emptyFolder')}</Text>
+          </View>
+        ) : (
+          <View>
+            {viewMode === 'grid' ? (
+              <FileGrid
+                files={files}
+                selectedFiles={selectedFiles}
+                onFileClick={handleFileClick}
+                onFileDoubleClick={handleFileDoubleClick}
+                onContextMenu={handleContextMenu}
+                onSelectAll={handleSelectAll}
+              />
+            ) : (
+              <FileList
+                files={files}
+                selectedFiles={selectedFiles}
+                onFileClick={handleFileClick}
+                onFileDoubleClick={handleFileDoubleClick}
+                onContextMenu={handleContextMenu}
+                onSelectAll={handleSelectAll}
+              />
+            )}
+            
+            {/* Load More Button */}
+            {hasMore && (
+              <Flex justifyContent="center" marginTop="size-200" marginBottom="size-400">
+                <Button 
+                  variant="secondary" 
+                  onPress={loadMore} 
+                  isPending={isLoadingMore}
+                  width="size-2000"
+                >
+                  <Text>Load More</Text>
+                </Button>
+              </Flex>
+            )}
+          </View>
+        )}
+      </View>
 
       {/* Context Menu */}
       {contextMenu && (
@@ -426,7 +482,7 @@ export default function FilesPage() {
           onDelete={() => handleDelete([contextMenu.file.key])}
           onEdit={() => setEditFile(contextMenu.file)}
           onPreview={() => setPreviewFile(contextMenu.file)}
-          onRefresh={loadFiles}
+          onRefresh={refreshFiles}
         />
       )}
 
@@ -447,7 +503,7 @@ export default function FilesPage() {
           onClose={() => setEditFile(null)}
           onSave={() => {
             setEditFile(null);
-            loadFiles();
+            refreshFiles();
           }}
         />
       )}

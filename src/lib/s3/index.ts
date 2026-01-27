@@ -37,16 +37,34 @@ export function createS3Client(config: S3Config, decryptSecret = true): S3Client
   });
 }
 
+export interface ListObjectsOptions {
+  maxKeys?: number;
+  continuationToken?: string;
+}
+
+export interface ListObjectsResult {
+  files: FileItem[];
+  folders: FileItem[];
+  nextContinuationToken?: string;
+  isTruncated: boolean;
+  totalCount: number;
+}
+
 export async function listObjects(
   client: S3Client,
   bucket: string,
   prefix: string = '',
-  delimiter: string = '/'
-): Promise<{ files: FileItem[]; folders: FileItem[] }> {
+  delimiter: string = '/',
+  options: ListObjectsOptions = {}
+): Promise<ListObjectsResult> {
+  const { maxKeys = 100, continuationToken } = options;
+  
   const command = new ListObjectsV2Command({
     Bucket: bucket,
     Prefix: prefix,
     Delimiter: delimiter,
+    MaxKeys: maxKeys,
+    ContinuationToken: continuationToken,
   });
 
   const response = await client.send(command);
@@ -62,14 +80,20 @@ export async function listObjects(
     }));
 
   const folders: FileItem[] = (response.CommonPrefixes || [])
-    .filter(prefix => prefix.Prefix)
-    .map(prefix => ({
-      key: prefix.Prefix!,
-      name: prefix.Prefix!.replace(prefix.Prefix!.split('/').slice(0, -2).join('/') + '/', '').replace(/\/$/, ''),
+    .filter(p => p.Prefix)
+    .map(p => ({
+      key: p.Prefix!,
+      name: p.Prefix!.replace(p.Prefix!.split('/').slice(0, -2).join('/') + '/', '').replace(/\/$/, ''),
       type: 'folder' as const,
     }));
 
-  return { files, folders };
+  return { 
+    files, 
+    folders,
+    nextContinuationToken: response.NextContinuationToken,
+    isTruncated: response.IsTruncated || false,
+    totalCount: (response.KeyCount || 0) + (response.CommonPrefixes?.length || 0),
+  };
 }
 
 export async function getObject(
