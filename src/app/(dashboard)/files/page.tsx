@@ -19,6 +19,7 @@ import {
   Tooltip,
   TooltipTrigger,
   AlertDialog,
+  SearchField,
 } from '@adobe/react-spectrum';
 import FolderAdd from '@spectrum-icons/workflow/FolderAdd';
 import UploadToCloud from '@spectrum-icons/workflow/UploadToCloud';
@@ -56,6 +57,7 @@ export default function FilesPage() {
 
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState('/');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -96,8 +98,11 @@ export default function FilesPage() {
     file: FileItem;
   } | null>(null);
 
-  const loadFiles = useCallback(async (append = false, token?: string) => {
+  const loadFiles = useCallback(async (append = false, token?: string, search?: string) => {
     if (!selectedBucket) return;
+
+    // Use current state searchQuery if search param is not provided
+    const query = search !== undefined ? search : searchQuery;
 
     if (append) {
       setIsLoadingMore(true);
@@ -114,6 +119,11 @@ export default function FilesPage() {
         path: currentPath,
         pageSize: PAGE_SIZE.toString(),
       });
+      
+      if (query) {
+        params.set('search', query);
+      }
+      
       if (token) {
         params.set('continuationToken', token);
       }
@@ -137,7 +147,25 @@ export default function FilesPage() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [selectedBucket, currentPath]);
+  }, [selectedBucket, currentPath, searchQuery]);
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    // Debounce handled by SearchField onClear/onSubmit or useEffect if live search needed
+    // For native S3 search, it's better to trigger on submit or with delay
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Only reload if not initial load (handled by other useEffect)
+      if (selectedBucket) {
+        loadFiles(false, undefined, searchQuery);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]); // Remove loadFiles from dependency to avoid loop, rely on searchQuery change
 
   const refreshFiles = () => {
     loadFiles(false);
@@ -149,9 +177,13 @@ export default function FilesPage() {
     }
   };
 
+  // Initial load effect - remove loadFiles dependency to prevent double loading with search effect
   useEffect(() => {
-    loadFiles();
-  }, [loadFiles]);
+    // Only load if search is empty, otherwise search effect will handle it
+    if (!searchQuery) {
+      loadFiles();
+    }
+  }, [currentPath, selectedBucket]); // Reload when path or bucket changes
 
   const handleNavigate = (path: string) => {
     setCurrentPath(path);
@@ -341,9 +373,21 @@ export default function FilesPage() {
         wrap={isMobile ? 'wrap' : 'nowrap'}
         gap="size-100"
       >
-        <Breadcrumb path={currentPath} onNavigate={handleNavigate} />
+        <Breadcrumb path={currentPath} onNavigate={(path) => {
+          setSearchQuery(''); // Clear search when navigating
+          handleNavigate(path);
+        }} />
 
-        <Flex gap="size-100" alignItems="center">
+        <Flex gap="size-100" alignItems="center" wrap="wrap">
+          <SearchField
+            aria-label={t('search')}
+            placeholder={t('search')}
+            value={searchQuery}
+            onChange={handleSearch}
+            width={isMobile ? "100%" : "size-2400"}
+            onClear={() => setSearchQuery('')}
+          />
+
           {permissions?.canCreateFolder && (
             <DialogTrigger isOpen={isNewFolderOpen} onOpenChange={setIsNewFolderOpen}>
               {isMobile ? (

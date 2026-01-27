@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const bucketId = searchParams.get('bucketId');
     const path = searchParams.get('path') || '/';
+    const search = searchParams.get('search') || '';
     const continuationToken = searchParams.get('continuationToken') || undefined;
     const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
 
@@ -78,7 +79,18 @@ export async function GET(request: NextRequest) {
     });
 
     // List objects with pagination
-    const prefix = effectivePath === '/' ? '' : effectivePath.replace(/^\//, '');
+    let prefix = effectivePath === '/' ? '' : effectivePath.replace(/^\//, '');
+    
+    // Append search term to prefix if provided
+    // Ensure prefix ends with / if it's a directory, unless we are searching
+    if (!prefix.endsWith('/') && prefix !== '') {
+        prefix += '/';
+    }
+    
+    if (search) {
+        prefix += search;
+    }
+
     const result = await listObjects(client, bucket.name, prefix, '/', {
       maxKeys: pageSize,
       continuationToken,
@@ -92,6 +104,35 @@ export async function GET(request: NextRequest) {
       if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
       return a.name.localeCompare(b.name);
     });
+
+    // If searching, names might include the search prefix, we need to extract just the filename relative to current folder
+    if (search) {
+        // Since we are searching in the current folder, the keys returned will start with the prefix (folder + search)
+        // We want to display them relative to the current folder.
+        // The listObjects function already handles stripping the prefix from the name, 
+        // BUT if we modified the prefix by appending search, listObjects will strip 'folder/searchterm' from the name.
+        // This would result in 'remainder_of_filename' instead of 'searchterm_remainder'.
+        // So we need to be careful.
+        
+        // Actually, listObjects implementation:
+        // name: obj.Key!.replace(prefix, '').replace(/\/$/, '')
+        
+        // If prefix is 'folder/lap', and key is 'folder/laporan.pdf'
+        // name becomes 'oran.pdf'. This is WRONG for display.
+        // We want 'laporan.pdf'.
+        
+        // So we should NOT rely on listObjects name parsing if we use search prefix.
+        // We should fix listObjects or handle it here.
+        // Let's modify listObjects to be smarter or fix names here.
+        
+        // Let's re-map the names correctly relative to the current folder path
+        const folderPrefix = effectivePath === '/' ? '' : effectivePath.replace(/^\//, '');
+        const folderPrefixWithSlash = (folderPrefix && !folderPrefix.endsWith('/')) ? folderPrefix + '/' : folderPrefix;
+
+        allFiles.forEach(f => {
+            f.name = f.key.replace(folderPrefixWithSlash, '').replace(/\/$/, '');
+        });
+    }
 
     return NextResponse.json({
       success: true,
