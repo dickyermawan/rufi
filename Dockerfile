@@ -36,10 +36,6 @@ RUN adduser --system --uid 1001 nextjs
 # Install openssl for Prisma
 RUN apk add --no-cache openssl
 
-# Install prisma for migrations and fix permissions
-RUN npm install -g prisma@5
-RUN chown -R nextjs:nodejs /usr/local/lib/node_modules/prisma
-
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
@@ -56,7 +52,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# Setup user environment for global npm packages
 USER nextjs
+ENV NPM_CONFIG_PREFIX=/home/nextjs/.npm-global
+ENV PATH=$PATH:/home/nextjs/.npm-global/bin
+
+# Install prisma locally for the user (avoids permission issues)
+RUN mkdir -p /home/nextjs/.npm-global && \
+    npm install -g prisma@5
 
 EXPOSE 3000
 
