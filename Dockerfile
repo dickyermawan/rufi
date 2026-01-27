@@ -33,8 +33,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Install prisma for migrations
+# Install openssl for Prisma
+RUN apk add --no-cache openssl
+
+# Install prisma for migrations and fix permissions
 RUN npm install -g prisma@5
+RUN chown -R nextjs:nodejs /usr/local/lib/node_modules/prisma
 
 COPY --from=builder /app/public ./public
 
@@ -62,4 +66,4 @@ ENV HOSTNAME="0.0.0.0"
 ENV DATABASE_URL="file:/app/data/rufi.db"
 
 # Run migrations and start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
