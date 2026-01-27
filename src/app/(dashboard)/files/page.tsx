@@ -62,6 +62,19 @@ export default function FilesPage() {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [permissions, setPermissions] = useState<Permission | null>(null);
   
+  // Load view mode from local storage
+  useEffect(() => {
+    const savedViewMode = localStorage.getItem('rufi_view_mode');
+    if (savedViewMode === 'list' || savedViewMode === 'grid') {
+      setViewMode(savedViewMode);
+    }
+  }, []);
+
+  const handleViewModeChange = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('rufi_view_mode', mode);
+  };
+  
   // Pagination state
   const [hasMore, setHasMore] = useState(false);
   const [nextToken, setNextToken] = useState<string | null>(null);
@@ -411,7 +424,7 @@ export default function FilesPage() {
           <TooltipTrigger>
             <ActionButton
               isQuiet
-              onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              onPress={() => handleViewModeChange(viewMode === 'grid' ? 'list' : 'grid')}
               aria-label={viewMode === 'grid' ? t('listView') : t('gridView')}
             >
               {viewMode === 'grid' ? <ViewList /> : <ViewGrid />}
