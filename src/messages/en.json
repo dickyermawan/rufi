@@ -64,7 +64,8 @@
     "gridView": "Grid view",
     "selected": "selected",
     "clearSelection": "Clear selection",
-    "deleteConfirmTitle": "Delete items?"
+    "deleteConfirmTitle": "Delete items?",
+    "search": "Search in this folder"
   },
   "users": {
     "title": "Users",

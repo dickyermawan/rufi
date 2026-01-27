@@ -64,7 +64,8 @@
     "gridView": "Tampilan grid",
     "selected": "dipilih",
     "clearSelection": "Hapus pilihan",
-    "deleteConfirmTitle": "Hapus item?"
+    "deleteConfirmTitle": "Hapus item?",
+    "search": "Cari di folder ini"
   },
   "users": {
     "title": "Pengguna",
