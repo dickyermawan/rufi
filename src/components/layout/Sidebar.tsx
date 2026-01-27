@@ -14,13 +14,16 @@ import User from '@spectrum-icons/workflow/User';
 import DataSettings from '@spectrum-icons/workflow/DataSettings';
 import Settings from '@spectrum-icons/workflow/Settings';
 import LogOut from '@spectrum-icons/workflow/LogOut';
+import Close from '@spectrum-icons/workflow/Close';
 import { RufiLogo } from '@/components/RufiLogo';
 
 interface SidebarProps {
   isRoot: boolean;
+  onClose?: () => void;
+  isMobile?: boolean;
 }
 
-export function Sidebar({ isRoot }: SidebarProps) {
+export function Sidebar({ isRoot, onClose, isMobile }: SidebarProps) {
   const t = useTranslations('nav');
   const router = useRouter();
   const pathname = usePathname();
@@ -29,6 +32,11 @@ export function Sidebar({ isRoot }: SidebarProps) {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
     router.refresh();
+  };
+
+  const handleNavClick = (href: string) => {
+    router.push(href);
+    if (onClose) onClose();
   };
 
   const navItems = [
@@ -45,43 +53,55 @@ export function Sidebar({ isRoot }: SidebarProps) {
   return (
     <View
       backgroundColor="gray-100"
-      width="size-3000"
-      padding="size-200"
+      width="100%"
+      height="100%"
       UNSAFE_style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100vh',
         borderRight: '1px solid var(--spectrum-global-color-gray-300)',
       }}
     >
-      <View paddingY="size-200" paddingX="size-100">
-        <Flex alignItems="center" gap="size-100">
-          <RufiLogo size={28} />
-          <Text
-            UNSAFE_style={{
-              fontSize: '1.25rem',
-              fontWeight: 'bold',
-              color: 'var(--spectrum-global-color-blue-600)',
-            }}
-          >
-            Rufi
-          </Text>
+      {/* Header */}
+      <View padding="size-200">
+        <Flex alignItems="center" justifyContent="space-between">
+          <Flex alignItems="center" gap="size-100">
+            <RufiLogo size={28} />
+            <Text
+              UNSAFE_style={{
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                color: 'var(--spectrum-global-color-blue-600)',
+              }}
+            >
+              Rufi
+            </Text>
+          </Flex>
+          
+          {/* Close button for mobile */}
+          {isMobile && onClose && (
+            <ActionButton isQuiet onPress={onClose} aria-label="Close menu">
+              <Close />
+            </ActionButton>
+          )}
         </Flex>
       </View>
 
-      <Divider size="S" marginY="size-100" />
+      <Divider size="S" />
 
-      <Flex direction="column" gap="size-50" flex={1}>
-        {navItems.map((item) => (
+      {/* Navigation */}
+      <View flex padding="size-200">
+        <Flex direction="column" gap="size-50">
+          {navItems.map((item) => (
           <ActionButton
             key={item.key}
             isQuiet
-            onPress={() => router.push(item.href)}
+            onPress={() => handleNavClick(item.href)}
             UNSAFE_style={{
               justifyContent: 'flex-start',
               backgroundColor: pathname.startsWith(item.href)
                 ? 'var(--spectrum-global-color-blue-100)'
                 : 'transparent',
+              borderRadius: '8px',
             }}
           >
             <Flex alignItems="center" gap="size-100">
@@ -90,16 +110,28 @@ export function Sidebar({ isRoot }: SidebarProps) {
             </Flex>
           </ActionButton>
         ))}
-      </Flex>
-
-      <Divider size="S" marginY="size-100" />
-
-      <ActionButton isQuiet onPress={handleLogout}>
-        <Flex alignItems="center" gap="size-100">
-          <LogOut />
-          <Text>{t('logout')}</Text>
         </Flex>
-      </ActionButton>
+      </View>
+
+      <Divider size="S" />
+
+      {/* Logout */}
+      <View padding="size-200">
+        <ActionButton 
+          isQuiet 
+          onPress={handleLogout}
+          width="100%"
+          UNSAFE_style={{
+            justifyContent: 'flex-start',
+            borderRadius: '8px',
+          }}
+        >
+          <Flex alignItems="center" gap="size-100">
+            <LogOut />
+            <Text>{t('logout')}</Text>
+          </Flex>
+        </ActionButton>
+      </View>
     </View>
   );
 }

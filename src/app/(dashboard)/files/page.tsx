@@ -16,6 +16,8 @@ import {
   ButtonGroup,
   TextField,
   Divider,
+  Tooltip,
+  TooltipTrigger,
 } from '@adobe/react-spectrum';
 import FolderAdd from '@spectrum-icons/workflow/FolderAdd';
 import UploadToCloud from '@spectrum-icons/workflow/UploadToCloud';
@@ -36,6 +38,17 @@ import { FileItem, Permission } from '@/types';
 export default function FilesPage() {
   const t = useTranslations('files');
   const { selectedBucket, buckets } = useDashboard();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentPath, setCurrentPath] = useState('/');
@@ -192,16 +205,31 @@ export default function FilesPage() {
     >
       <View height="100%">
       {/* Toolbar */}
-      <Flex alignItems="center" justifyContent="space-between" marginBottom="size-200">
+      <Flex 
+        alignItems="center" 
+        justifyContent="space-between" 
+        marginBottom="size-200"
+        wrap={isMobile ? 'wrap' : 'nowrap'}
+        gap="size-100"
+      >
         <Breadcrumb path={currentPath} onNavigate={handleNavigate} />
 
-        <Flex gap="size-100">
+        <Flex gap="size-100" alignItems="center">
           {permissions?.canCreateFolder && (
             <DialogTrigger isOpen={isNewFolderOpen} onOpenChange={setIsNewFolderOpen}>
-              <ActionButton>
-                <FolderAdd />
-                <Text>{t('newFolder')}</Text>
-              </ActionButton>
+              {isMobile ? (
+                <TooltipTrigger>
+                  <ActionButton aria-label={t('newFolder')}>
+                    <FolderAdd />
+                  </ActionButton>
+                  <Tooltip>{t('newFolder')}</Tooltip>
+                </TooltipTrigger>
+              ) : (
+                <ActionButton>
+                  <FolderAdd />
+                  <Text>{t('newFolder')}</Text>
+                </ActionButton>
+              )}
               <Dialog>
                 <Heading>{t('newFolder')}</Heading>
                 <Divider />
@@ -227,10 +255,19 @@ export default function FilesPage() {
 
           {permissions?.canUpload && (
             <DialogTrigger isOpen={isUploadOpen} onOpenChange={setIsUploadOpen}>
-              <ActionButton>
-                <UploadToCloud />
-                <Text>{t('upload')}</Text>
-              </ActionButton>
+              {isMobile ? (
+                <TooltipTrigger>
+                  <ActionButton aria-label={t('upload')}>
+                    <UploadToCloud />
+                  </ActionButton>
+                  <Tooltip>{t('upload')}</Tooltip>
+                </TooltipTrigger>
+              ) : (
+                <ActionButton>
+                  <UploadToCloud />
+                  <Text>{t('upload')}</Text>
+                </ActionButton>
+              )}
               <Dialog size="L">
                 <Heading>{t('upload')}</Heading>
                 <Divider />
@@ -248,16 +285,23 @@ export default function FilesPage() {
             </DialogTrigger>
           )}
 
-          <ActionButton onPress={loadFiles}>
-            <Refresh />
-          </ActionButton>
+          <TooltipTrigger>
+            <ActionButton onPress={loadFiles} aria-label={t('refresh')}>
+              <Refresh />
+            </ActionButton>
+            <Tooltip>{t('refresh')}</Tooltip>
+          </TooltipTrigger>
 
-          <ActionButton
-            isQuiet
-            onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-          >
-            {viewMode === 'grid' ? <ViewList /> : <ViewGrid />}
-          </ActionButton>
+          <TooltipTrigger>
+            <ActionButton
+              isQuiet
+              onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              aria-label={viewMode === 'grid' ? t('listView') : t('gridView')}
+            >
+              {viewMode === 'grid' ? <ViewList /> : <ViewGrid />}
+            </ActionButton>
+            <Tooltip>{viewMode === 'grid' ? t('listView') : t('gridView')}</Tooltip>
+          </TooltipTrigger>
         </Flex>
       </Flex>
 

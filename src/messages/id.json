@@ -58,7 +58,10 @@
     "dropFilesHere": "Letakkan file di sini atau klik untuk unggah",
     "selectBucket": "Pilih bucket",
     "noBuckets": "Belum ada bucket dikonfigurasi",
-    "noAccess": "Anda tidak memiliki akses ke bucket manapun"
+    "noAccess": "Anda tidak memiliki akses ke bucket manapun",
+    "refresh": "Segarkan",
+    "listView": "Tampilan daftar",
+    "gridView": "Tampilan grid"
   },
   "users": {
     "title": "Pengguna",

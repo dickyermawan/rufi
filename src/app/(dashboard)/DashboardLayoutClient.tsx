@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, createContext, useContext, Key } from 'react';
-import { View, Flex } from '@adobe/react-spectrum';
+import { useState, createContext, useContext, Key, useEffect } from 'react';
+import { View, Flex, ActionButton } from '@adobe/react-spectrum';
+import ShowMenu from '@spectrum-icons/workflow/ShowMenu';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 interface User {
   id: string;
@@ -21,6 +23,8 @@ interface DashboardContextType {
   buckets: Bucket[];
   selectedBucket: string;
   setSelectedBucket: (id: string) => void;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | null>(null);
@@ -45,6 +49,18 @@ export function DashboardLayoutClient({
   buckets,
 }: DashboardLayoutClientProps) {
   const [selectedBucket, setSelectedBucket] = useState(buckets[0]?.id || '');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleBucketChange = (key: Key | null) => {
     if (key) {
@@ -59,26 +75,77 @@ export function DashboardLayoutClient({
         buckets,
         selectedBucket,
         setSelectedBucket,
+        isMobileMenuOpen,
+        setIsMobileMenuOpen,
       }}
     >
-      <Flex UNSAFE_style={{ height: '100vh' }}>
-        <Sidebar isRoot={user.isRoot} />
-        <Flex direction="column" flex={1} UNSAFE_style={{ overflow: 'hidden' }}>
-          <Header
-            username={user.username}
-            buckets={buckets}
-            selectedBucket={selectedBucket}
-            onBucketChange={handleBucketChange}
-          />
+      {/* Mobile overlay */}
+      {isMobile && (
+        <div 
+          className={`sidebar-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
+        <Sidebar 
+          isRoot={user.isRoot} 
+          onClose={() => setIsMobileMenuOpen(false)}
+          isMobile={isMobile}
+        />
+      </div>
+
+      {/* Main content */}
+      <div className="main-content">
+        <Flex direction="column" UNSAFE_style={{ minHeight: '100vh' }}>
+          {/* Header */}
+          <View
+            backgroundColor="gray-75"
+            padding="size-200"
+            UNSAFE_style={{
+              borderBottom: '1px solid var(--spectrum-global-color-gray-300)',
+              position: 'sticky',
+              top: 0,
+              zIndex: 50,
+            }}
+          >
+            <Flex alignItems="center" gap="size-100">
+              {/* Mobile menu button */}
+              <ActionButton
+                isQuiet
+                onPress={() => setIsMobileMenuOpen(true)}
+                UNSAFE_className="mobile-menu-btn"
+                aria-label="Open menu"
+              >
+                <ShowMenu />
+              </ActionButton>
+
+              <Header
+                username={user.username}
+                buckets={buckets}
+                selectedBucket={selectedBucket}
+                onBucketChange={handleBucketChange}
+                isMobile={isMobile}
+              />
+            </Flex>
+          </View>
+
+          {/* Page content */}
           <View
             flex={1}
-            padding="size-300"
+            padding={isMobile ? "size-200" : "size-300"}
             UNSAFE_style={{ overflow: 'auto' }}
           >
             {children}
           </View>
         </Flex>
-      </Flex>
+      </div>
+
+      {/* Mobile bottom navigation */}
+      {isMobile && (
+        <MobileBottomNav isRoot={user.isRoot} />
+      )}
     </DashboardContext.Provider>
   );
 }

@@ -28,8 +28,9 @@ import Add from '@spectrum-icons/workflow/Add';
 import Delete from '@spectrum-icons/workflow/Delete';
 import Edit from '@spectrum-icons/workflow/Edit';
 import Settings from '@spectrum-icons/workflow/Settings';
+import User from '@spectrum-icons/workflow/User';
 
-interface User {
+interface UserType {
   id: string;
   username: string;
   isRoot: boolean;
@@ -39,20 +40,104 @@ interface User {
   }>;
 }
 
+// Mobile User Card Component
+function UserCard({ 
+  user, 
+  onEdit, 
+  onAccess, 
+  onDelete,
+  t,
+}: { 
+  user: UserType; 
+  onEdit: () => void; 
+  onAccess: () => void;
+  onDelete: () => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <View
+      backgroundColor="gray-75"
+      padding="size-200"
+      borderRadius="medium"
+      UNSAFE_style={{
+        border: '1px solid var(--spectrum-global-color-gray-300)',
+      }}
+    >
+      <Flex direction="column" gap="size-150">
+        <Flex alignItems="center" gap="size-100">
+          <View
+            backgroundColor={user.isRoot ? 'blue-400' : 'gray-300'}
+            padding="size-100"
+            borderRadius="regular"
+          >
+            <User size="S" />
+          </View>
+          <Flex direction="column" flex={1}>
+            <Text UNSAFE_style={{ fontWeight: 'bold', fontSize: '16px' }}>
+              {user.username}
+            </Text>
+            <Text UNSAFE_style={{ fontSize: '12px', color: 'var(--spectrum-global-color-gray-600)' }}>
+              {user.isRoot ? 'Root Admin' : 'User'}
+            </Text>
+          </Flex>
+        </Flex>
+
+        <Divider size="S" />
+
+        <View>
+          <Text UNSAFE_style={{ fontSize: '12px', color: 'var(--spectrum-global-color-gray-600)' }}>
+            {t('bucketAccess')}
+          </Text>
+          <Text UNSAFE_style={{ fontSize: '13px' }}>
+            {user.isRoot
+              ? 'All buckets'
+              : user.bucketAccess.map((a) => a.bucket.name).join(', ') || 'None'}
+          </Text>
+        </View>
+
+        <Flex gap="size-100" marginTop="size-100">
+          <ActionButton flex={1} onPress={onEdit}>
+            <Edit size="S" />
+            <Text>Edit</Text>
+          </ActionButton>
+          <ActionButton flex={1} onPress={onAccess}>
+            <Settings size="S" />
+            <Text>Access</Text>
+          </ActionButton>
+          <ActionButton onPress={onDelete}>
+            <Delete size="S" />
+          </ActionButton>
+        </Flex>
+      </Flex>
+    </View>
+  );
+}
+
 export default function UsersPage() {
   const t = useTranslations('users');
   const tCommon = useTranslations('common');
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editUser, setEditUser] = useState<User | null>(null);
-  const [accessUser, setAccessUser] = useState<User | null>(null);
+  const [editUser, setEditUser] = useState<UserType | null>(null);
+  const [accessUser, setAccessUser] = useState<UserType | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Form state
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isRoot, setIsRoot] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -139,7 +224,7 @@ export default function UsersPage() {
     }
   };
 
-  const openEditDialog = (user: User) => {
+  const openEditDialog = (user: UserType) => {
     setEditUser(user);
     setUsername(user.username);
     setPassword('');
@@ -157,10 +242,16 @@ export default function UsersPage() {
 
   return (
     <View>
-      <Flex alignItems="center" justifyContent="space-between" marginBottom="size-300">
+      <Flex 
+        alignItems="center" 
+        justifyContent="space-between" 
+        marginBottom="size-300"
+        wrap={isMobile ? 'wrap' : 'nowrap'}
+        gap="size-200"
+      >
         <Heading level={1}>{t('title')}</Heading>
         <DialogTrigger isOpen={isAddOpen} onOpenChange={setIsAddOpen}>
-          <Button variant="accent">
+          <Button variant="accent" width={isMobile ? '100%' : undefined}>
             <Add />
             <Text>{t('addUser')}</Text>
           </Button>
@@ -204,40 +295,64 @@ export default function UsersPage() {
         </DialogTrigger>
       </Flex>
 
-      <TableView aria-label="Users table" selectionMode="none">
-        <TableHeader>
-          <Column key="username" width="30%">{t('username')}</Column>
-          <Column key="isRoot" width="15%">{t('isRoot')}</Column>
-          <Column key="buckets" width="35%">{t('bucketAccess')}</Column>
-          <Column key="actions" width="20%">{tCommon('actions')}</Column>
-        </TableHeader>
-        <TableBody>
+      {/* Mobile Card View */}
+      {isMobile ? (
+        <Flex direction="column" gap="size-200">
           {users.map((user) => (
-            <Row key={user.id}>
-              <Cell>{user.username}</Cell>
-              <Cell>{user.isRoot ? 'Yes' : 'No'}</Cell>
-              <Cell>
-                {user.isRoot
-                  ? 'All buckets'
-                  : user.bucketAccess.map((a) => a.bucket.name).join(', ') || 'None'}
-              </Cell>
-              <Cell>
-                <Flex gap="size-100">
-                  <ActionButton isQuiet onPress={() => openEditDialog(user)}>
-                    <Edit size="S" />
-                  </ActionButton>
-                  <ActionButton isQuiet onPress={() => setAccessUser(user)}>
-                    <Settings size="S" />
-                  </ActionButton>
-                  <ActionButton isQuiet onPress={() => handleDeleteUser(user.id)}>
-                    <Delete size="S" />
-                  </ActionButton>
-                </Flex>
-              </Cell>
-            </Row>
+            <UserCard
+              key={user.id}
+              user={user}
+              onEdit={() => openEditDialog(user)}
+              onAccess={() => setAccessUser(user)}
+              onDelete={() => handleDeleteUser(user.id)}
+              t={t}
+            />
           ))}
-        </TableBody>
-      </TableView>
+          {users.length === 0 && (
+            <View padding="size-400" UNSAFE_style={{ textAlign: 'center' }}>
+              <Text UNSAFE_style={{ color: 'var(--spectrum-global-color-gray-600)' }}>
+                No users found
+              </Text>
+            </View>
+          )}
+        </Flex>
+      ) : (
+        /* Desktop Table View */
+        <TableView aria-label="Users table" selectionMode="none">
+          <TableHeader>
+            <Column key="username" width="30%">{t('username')}</Column>
+            <Column key="isRoot" width="15%">{t('isRoot')}</Column>
+            <Column key="buckets" width="35%">{t('bucketAccess')}</Column>
+            <Column key="actions" width="20%">{tCommon('actions')}</Column>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <Row key={user.id}>
+                <Cell>{user.username}</Cell>
+                <Cell>{user.isRoot ? 'Yes' : 'No'}</Cell>
+                <Cell>
+                  {user.isRoot
+                    ? 'All buckets'
+                    : user.bucketAccess.map((a) => a.bucket.name).join(', ') || 'None'}
+                </Cell>
+                <Cell>
+                  <Flex gap="size-100">
+                    <ActionButton isQuiet onPress={() => openEditDialog(user)}>
+                      <Edit size="S" />
+                    </ActionButton>
+                    <ActionButton isQuiet onPress={() => setAccessUser(user)}>
+                      <Settings size="S" />
+                    </ActionButton>
+                    <ActionButton isQuiet onPress={() => handleDeleteUser(user.id)}>
+                      <Delete size="S" />
+                    </ActionButton>
+                  </Flex>
+                </Cell>
+              </Row>
+            ))}
+          </TableBody>
+        </TableView>
+      )}
 
       {/* Edit User Dialog */}
       {editUser && (

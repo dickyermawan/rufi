@@ -23,11 +23,13 @@ import {
   Row,
   Cell,
   ProgressCircle,
+  Badge,
 } from '@adobe/react-spectrum';
 import Add from '@spectrum-icons/workflow/Add';
 import Delete from '@spectrum-icons/workflow/Delete';
 import Edit from '@spectrum-icons/workflow/Edit';
 import Checkmark from '@spectrum-icons/workflow/Checkmark';
+import Cloud from '@spectrum-icons/workflow/Cloud';
 
 interface Bucket {
   id: string;
@@ -35,6 +37,79 @@ interface Bucket {
   endpoint: string;
   region: string;
   isDefault: boolean;
+}
+
+// Mobile Bucket Card Component
+function BucketCard({
+  bucket,
+  onEdit,
+  onDelete,
+  t,
+}: {
+  bucket: Bucket;
+  onEdit: () => void;
+  onDelete: () => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <View
+      backgroundColor="gray-75"
+      padding="size-200"
+      borderRadius="medium"
+      UNSAFE_style={{
+        border: '1px solid var(--spectrum-global-color-gray-300)',
+      }}
+    >
+      <Flex direction="column" gap="size-150">
+        <Flex alignItems="center" gap="size-100">
+          <View
+            backgroundColor="blue-400"
+            padding="size-100"
+            borderRadius="regular"
+          >
+            <Cloud size="S" />
+          </View>
+          <Flex direction="column" flex={1}>
+            <Flex alignItems="center" gap="size-100">
+              <Text UNSAFE_style={{ fontWeight: 'bold', fontSize: '16px' }}>
+                {bucket.name}
+              </Text>
+              {bucket.isDefault && (
+                <Badge variant="positive">
+                  <Checkmark size="XS" />
+                  <Text>Default</Text>
+                </Badge>
+              )}
+            </Flex>
+            <Text UNSAFE_style={{ fontSize: '12px', color: 'var(--spectrum-global-color-gray-600)' }}>
+              {bucket.region}
+            </Text>
+          </Flex>
+        </Flex>
+
+        <Divider size="S" />
+
+        <View>
+          <Text UNSAFE_style={{ fontSize: '12px', color: 'var(--spectrum-global-color-gray-600)' }}>
+            {t('endpoint')}
+          </Text>
+          <Text UNSAFE_style={{ fontSize: '13px', wordBreak: 'break-all' }}>
+            {bucket.endpoint}
+          </Text>
+        </View>
+
+        <Flex gap="size-100" marginTop="size-100">
+          <ActionButton flex={1} onPress={onEdit}>
+            <Edit size="S" />
+            <Text>Edit</Text>
+          </ActionButton>
+          <ActionButton onPress={onDelete}>
+            <Delete size="S" />
+          </ActionButton>
+        </Flex>
+      </Flex>
+    </View>
+  );
 }
 
 export default function BucketsPage() {
@@ -46,6 +121,7 @@ export default function BucketsPage() {
   const [editBucket, setEditBucket] = useState<Bucket | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Form state
   const [name, setName] = useState('');
@@ -55,6 +131,16 @@ export default function BucketsPage() {
   const [region, setRegion] = useState('auto');
   const [isDefault, setIsDefault] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const loadBuckets = async () => {
     setIsLoading(true);
@@ -233,10 +319,16 @@ export default function BucketsPage() {
 
   return (
     <View>
-      <Flex alignItems="center" justifyContent="space-between" marginBottom="size-300">
+      <Flex 
+        alignItems="center" 
+        justifyContent="space-between" 
+        marginBottom="size-300"
+        wrap={isMobile ? 'wrap' : 'nowrap'}
+        gap="size-200"
+      >
         <Heading level={1}>{t('title')}</Heading>
         <DialogTrigger isOpen={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) resetForm(); }}>
-          <Button variant="accent">
+          <Button variant="accent" width={isMobile ? '100%' : undefined}>
             <Add />
             <Text>{t('addBucket')}</Text>
           </Button>
@@ -256,35 +348,58 @@ export default function BucketsPage() {
         </DialogTrigger>
       </Flex>
 
-      <TableView aria-label="Buckets table" selectionMode="none">
-        <TableHeader>
-          <Column key="name" width="25%">{t('name')}</Column>
-          <Column key="endpoint" width="35%">{t('endpoint')}</Column>
-          <Column key="region" width="15%">{t('region')}</Column>
-          <Column key="default" width="10%">{t('isDefault')}</Column>
-          <Column key="actions" width="15%">{tCommon('actions')}</Column>
-        </TableHeader>
-        <TableBody>
+      {/* Mobile Card View */}
+      {isMobile ? (
+        <Flex direction="column" gap="size-200">
           {buckets.map((bucket) => (
-            <Row key={bucket.id}>
-              <Cell>{bucket.name}</Cell>
-              <Cell>{bucket.endpoint}</Cell>
-              <Cell>{bucket.region}</Cell>
-              <Cell>{bucket.isDefault ? <Checkmark size="S" /> : null}</Cell>
-              <Cell>
-                <Flex gap="size-100">
-                  <ActionButton isQuiet onPress={() => openEditDialog(bucket)}>
-                    <Edit size="S" />
-                  </ActionButton>
-                  <ActionButton isQuiet onPress={() => handleDeleteBucket(bucket.id)}>
-                    <Delete size="S" />
-                  </ActionButton>
-                </Flex>
-              </Cell>
-            </Row>
+            <BucketCard
+              key={bucket.id}
+              bucket={bucket}
+              onEdit={() => openEditDialog(bucket)}
+              onDelete={() => handleDeleteBucket(bucket.id)}
+              t={t}
+            />
           ))}
-        </TableBody>
-      </TableView>
+          {buckets.length === 0 && (
+            <View padding="size-400" UNSAFE_style={{ textAlign: 'center' }}>
+              <Text UNSAFE_style={{ color: 'var(--spectrum-global-color-gray-600)' }}>
+                No buckets configured
+              </Text>
+            </View>
+          )}
+        </Flex>
+      ) : (
+        /* Desktop Table View */
+        <TableView aria-label="Buckets table" selectionMode="none">
+          <TableHeader>
+            <Column key="name" width="25%">{t('name')}</Column>
+            <Column key="endpoint" width="35%">{t('endpoint')}</Column>
+            <Column key="region" width="15%">{t('region')}</Column>
+            <Column key="default" width="10%">{t('isDefault')}</Column>
+            <Column key="actions" width="15%">{tCommon('actions')}</Column>
+          </TableHeader>
+          <TableBody>
+            {buckets.map((bucket) => (
+              <Row key={bucket.id}>
+                <Cell>{bucket.name}</Cell>
+                <Cell>{bucket.endpoint}</Cell>
+                <Cell>{bucket.region}</Cell>
+                <Cell>{bucket.isDefault ? <Checkmark size="S" /> : null}</Cell>
+                <Cell>
+                  <Flex gap="size-100">
+                    <ActionButton isQuiet onPress={() => openEditDialog(bucket)}>
+                      <Edit size="S" />
+                    </ActionButton>
+                    <ActionButton isQuiet onPress={() => handleDeleteBucket(bucket.id)}>
+                      <Delete size="S" />
+                    </ActionButton>
+                  </Flex>
+                </Cell>
+              </Row>
+            ))}
+          </TableBody>
+        </TableView>
+      )}
 
       {/* Edit Bucket Dialog */}
       {editBucket && (

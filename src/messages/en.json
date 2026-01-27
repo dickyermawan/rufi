@@ -58,7 +58,10 @@
     "dropFilesHere": "Drop files here or click to upload",
     "selectBucket": "Select bucket",
     "noBuckets": "No buckets configured",
-    "noAccess": "You don't have access to any buckets"
+    "noAccess": "You don't have access to any buckets",
+    "refresh": "Refresh",
+    "listView": "List view",
+    "gridView": "Grid view"
   },
   "users": {
     "title": "Users",
