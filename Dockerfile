@@ -42,16 +42,15 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-# Create data directory for SQLite
-RUN mkdir -p /app/prisma/data
-RUN chown -R nextjs:nodejs /app/prisma
+# Create data directory for SQLite persistence
+RUN mkdir -p /app/data
+RUN chown -R nextjs:nodejs /app/data
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 
@@ -59,6 +58,8 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+# Default database URL if not provided
+ENV DATABASE_URL="file:/app/data/rufi.db"
 
 # Run migrations and start the server
 CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
