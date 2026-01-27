@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  isRoot    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bucketAccess BucketAccess[]
+  sessions     Session[]
+  sharedLinks  SharedLink[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BucketAccess {
+  id         String @id @default(cuid())
+  userId     String
+  bucketId   String
+  homeDir    String @default("/")
+
+  // Permissions
+  canList         Boolean @default(true)
+  canUpload       Boolean @default(false)
+  canDownload     Boolean @default(true)
+  canDelete       Boolean @default(false)
+  canRename       Boolean @default(false)
+  canCopy         Boolean @default(false)
+  canCreateFolder Boolean @default(false)
+  canEdit         Boolean @default(false)
+  canShare        Boolean @default(false)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bucket Bucket @relation(fields: [bucketId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bucketId])
+}
+
+model Bucket {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  endpoint  String
+  accessKey String
+  secretKey String
+  region    String  @default("auto")
+  isDefault Boolean @default(false)
+
+  bucketAccess BucketAccess[]
+  sharedLinks  SharedLink[]
+}
+
+model SharedLink {
+  id        String    @id @default(cuid())
+  userId    String
+  bucketId  String
+  path      String
+  token     String    @unique
+  expiresAt DateTime?
+  password  String?
+  createdAt DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bucket Bucket @relation(fields: [bucketId], references: [id], onDelete: Cascade)
+}

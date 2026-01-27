@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  rufi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rufi
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data  # SQLite database persistence
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/rufi.db
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/auth/me"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
