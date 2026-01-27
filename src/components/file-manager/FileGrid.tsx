@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, Checkbox, Flex, ActionButton } from '@adobe/react-spectrum';
+import { View, Text, Checkbox, Flex } from '@adobe/react-spectrum';
 import FolderOpen from '@spectrum-icons/workflow/FolderOpen';
 import Document from '@spectrum-icons/workflow/Document';
 import Image from '@spectrum-icons/workflow/Image';
@@ -9,7 +9,6 @@ import FileCode from '@spectrum-icons/workflow/FileCode';
 import FileTxt from '@spectrum-icons/workflow/FileTxt';
 import FileZip from '@spectrum-icons/workflow/FileZip';
 import VideoFilled from '@spectrum-icons/workflow/VideoFilled';
-import ChevronRight from '@spectrum-icons/workflow/ChevronRight';
 import { FileItem } from '@/types';
 
 interface FileGridProps {
@@ -21,33 +20,33 @@ interface FileGridProps {
   onSelectAll: (selected: boolean) => void;
 }
 
-function getFileIcon(file: FileItem, size: 'L' | 'XXL' = 'XXL') {
+function getFileIcon(file: FileItem) {
   if (file.type === 'folder') {
-    return <FolderOpen size={size} />;
+    return <FolderOpen size="XXL" />;
   }
 
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
-    return <Image size={size} aria-label="Image file" />;
+    return <Image size="XXL" aria-label="Image file" />;
   }
   if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) {
-    return <VideoFilled size={size} />;
+    return <VideoFilled size="XXL" />;
   }
   if (['mp3', 'wav', 'ogg', 'flac', 'aac'].includes(ext)) {
-    return <Document size={size} />;
+    return <Document size="XXL" />;
   }
   if (['js', 'ts', 'jsx', 'tsx', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'cs', 'php'].includes(ext)) {
-    return <FileCode size={size} />;
+    return <FileCode size="XXL" />;
   }
   if (['txt', 'md', 'json', 'xml', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'log'].includes(ext)) {
-    return <FileTxt size={size} />;
+    return <FileTxt size="XXL" />;
   }
   if (['zip', 'tar', 'gz', 'rar', '7z', 'bz2'].includes(ext)) {
-    return <FileZip size={size} />;
+    return <FileZip size="XXL" />;
   }
 
-  return <Document size={size} />;
+  return <Document size="XXL" />;
 }
 
 export function FileGrid({
@@ -74,10 +73,16 @@ export function FileGrid({
 
   const handleClick = (file: FileItem, e: React.MouseEvent) => {
     if (isMobile) {
+      // On mobile: single tap on folder opens it, single tap on file selects it
+      if (file.type === 'folder') {
+        onFileDoubleClick(file);
+        return;
+      }
+      
+      // For files: double-tap detection (within 300ms) to preview
       const now = Date.now();
       const lastTap = lastTapRef.current;
       
-      // Double-tap detection for mobile (within 300ms)
       if (lastTap.key === file.key && now - lastTap.time < 300) {
         onFileDoubleClick(file);
         lastTapRef.current = { time: 0, key: '' };
@@ -89,11 +94,6 @@ export function FileGrid({
     } else {
       onFileClick(file, e);
     }
-  };
-
-  const handleOpenFolder = (file: FileItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    onFileDoubleClick(file);
   };
 
   const allSelected = files.length > 0 && files.every((f) => selectedFiles.has(f.key));
@@ -150,22 +150,6 @@ export function FileGrid({
               >
                 {file.name}
               </Text>
-              
-              {/* Mobile: Show open button for folders */}
-              {isMobile && file.type === 'folder' && (
-                <ActionButton
-                  isQuiet
-                  onPress={(e) => handleOpenFolder(file, e as unknown as React.MouseEvent)}
-                  UNSAFE_style={{
-                    marginTop: '4px',
-                    backgroundColor: 'var(--spectrum-global-color-blue-100)',
-                    borderRadius: '16px',
-                  }}
-                >
-                  <ChevronRight size="S" />
-                  <Text>Buka</Text>
-                </ActionButton>
-              )}
             </div>
           </View>
         ))}
