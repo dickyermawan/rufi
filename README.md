@@ -1,45 +1,86 @@
-# Rufi - S3 File Manager ☁️
+<div align="center">
+  <a href="https://github.com/dickyermawan/rufi">
+    <img src="public/icon.svg" alt="Rufi Logo" width="120" height="120">
+  </a>
 
-A modern, high-performance, multi-provider S3 file manager designed for speed and usability. Built with **Next.js**, **React Spectrum**, and **Prisma**.
+  <h1 align="center">Rufi - S3 File Manager</h1>
 
-Rufi provides a beautiful, responsive interface to manage your S3 buckets (Cloudflare R2, AWS S3, MinIO) with granular user permissions, file previews, and advanced management features.
+  <p align="center">
+    <strong>Modern • Fast • Multi-Provider</strong>
+  </p>
+
+  <p align="center">
+    A beautiful, high-performance S3 file manager built for speed and usability.<br />
+    Manage your Cloudflare R2, AWS S3, and MinIO buckets with granular control.
+  </p>
+
+  <p align="center">
+    <a href="https://hub.docker.com/r/dickyermawan/rufi">
+      <img src="https://img.shields.io/docker/v/dickyermawan/rufi?style=flat-square&color=blue&label=Docker%20Image" alt="Docker Version" />
+    </a>
+    <a href="https://github.com/dickyermawan/rufi/blob/master/LICENSE">
+      <img src="https://img.shields.io/github/license/dickyermawan/rufi?style=flat-square&color=green" alt="License" />
+    </a>
+    <img src="https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js" alt="Next.js" />
+    <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/Prisma-ORM-teal?style=flat-square&logo=prisma" alt="Prisma" />
+  </p>
+</div>
 
 ---
 
-## ✨ Features
+## 📸 Screenshots
 
-### 🚀 Core Capabilities
-- **Multi-provider Support**: Connect seamlessly with Cloudflare R2, AWS S3, MinIO, and any S3-compatible storage.
-- **Full File Operations**: Upload, download, list, delete, rename, copy/move files and folders.
-- **Drag & Drop Upload**: Upload files and folders effortlessly by dragging them onto the interface. Includes progress tracking.
-- **Smart Search**: Quickly find files in the current folder with prefix search (supports debounce).
-- **Pagination**: Efficiently browse folders with thousands of files using "Load More" functionality.
+| Desktop View (Grid) | Mobile View (List) |
+|:---:|:---:|
+| <img src="https://placehold.co/800x500/e0e0e0/333333?text=Desktop+File+Manager" alt="Desktop View" width="100%"> | <img src="https://placehold.co/300x600/e0e0e0/333333?text=Mobile+View" alt="Mobile View" width="100%"> |
 
-### 🎨 User Interface & Experience
-- **Responsive Design**: Fully optimized for Desktop, Tablet, and Mobile devices.
-- **View Modes**: Switch between Grid and List views (persisted in local storage).
-- **File Previews**: Built-in preview for Images, Videos, Audio, PDF, and Text files.
-- **Code Editor**: Edit text/code files directly in the browser with syntax highlighting.
-- **Dark Mode**: Automatic or manual toggle for Dark/Light theme.
-
-### 🛡️ Security & Management
-- **User Management**: Create multiple users with role-based access.
-- **Granular Permissions**: 9 distinct permission levels per bucket (List, Upload, Delete, Share, etc.).
-- **Home Directories**: Restrict users to specific folders within a bucket.
-- **Public Sharing**: Generate secure public links with optional password protection and expiration dates.
+> *Experience a responsive design that adapts perfectly to any device.*
 
 ---
 
-## 🐳 Quick Start with Docker
+## ✨ Key Features
 
-The easiest way to run Rufi is using Docker. We provide a pre-built image on Docker Hub.
+<table>
+  <tr>
+    <td width="50%">
+      <h3>🚀 Powerful Core</h3>
+      <ul>
+        <li><strong>Multi-provider</strong>: Cloudflare R2, AWS S3, MinIO support.</li>
+        <li><strong>Full Operations</strong>: Upload, download, delete, rename, copy/move.</li>
+        <li><strong>Smart Search</strong>: Instant prefix search within folders.</li>
+        <li><strong>Pagination</strong>: Handle folders with thousands of files effortlessly.</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>🎨 Modern UX</h3>
+      <ul>
+        <li><strong>Drag & Drop</strong>: Full-screen drop zone for uploads.</li>
+        <li><strong>File Previews</strong>: Native preview for Images, Video, Audio, PDF.</li>
+        <li><strong>Code Editor</strong>: Edit text/code directly in browser.</li>
+        <li><strong>Dark Mode</strong>: Easy on the eyes with auto-switching theme.</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <h3>🛡️ Enterprise-Grade Management</h3>
+      <ul>
+        <li><strong>Granular Permissions</strong>: 9 distinct permission levels per user per bucket.</li>
+        <li><strong>Home Directories</strong>: Isolate users to specific folders.</li>
+        <li><strong>Secure Sharing</strong>: Public links with password & expiry protection.</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-### Prerequisites
-- Docker and Docker Compose installed on your machine.
+---
 
-### Deployment Steps
+## 🐳 Quick Start (Docker)
 
-1. **Create a `docker-compose.yml` file:**
+Get up and running in seconds with our official Docker image.
+
+### 1. Create `docker-compose.yml`
 
 ```yaml
 version: '3.8'
@@ -51,60 +92,25 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./data:/app/data  # Persist database
+      - ./data:/app/data
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/rufi.db
       - APP_URL=http://localhost:3000
-      - JWT_SECRET=change_this_to_a_secure_random_string
-      - ENCRYPTION_KEY=change_this_to_exactly_32_characters_long
+      - JWT_SECRET=change_this_to_secure_random_string
+      - ENCRYPTION_KEY=change_this_to_32_chars_exactly!!!
       - ROOT_USERNAME=admin
       - ROOT_PASSWORD=admin123
     restart: unless-stopped
 ```
 
-2. **Start the application:**
+### 2. Launch
 
 ```bash
 docker-compose up -d
 ```
 
-3. **Access Rufi:**
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
-   Login with the credentials defined in `ROOT_USERNAME` and `ROOT_PASSWORD`.
-
----
-
-## 🛠️ Manual Installation
-
-If you prefer to run it without Docker:
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/dickyermawan/rufi.git
-   cd rufi
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment:**
-   Copy `.env.example` to `.env` and update the values.
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **Initialize Database:**
-   ```bash
-   npx prisma migrate deploy
-   ```
-
-5. **Run Development Server:**
-   ```bash
-   npm run dev
-   ```
+Visit **http://localhost:3000** and login with `admin` / `admin123`.
 
 ---
 
@@ -112,55 +118,66 @@ If you prefer to run it without Docker:
 
 ### Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|:--------:|
-| `NODE_ENV` | Environment mode (development/production) | `development` | No |
-| `APP_URL` | Base URL of the application | `http://localhost:3000` | No |
-| `JWT_SECRET` | Secret key for signing session tokens | - | **Yes** |
-| `ENCRYPTION_KEY` | 32-char key for encrypting S3 credentials | - | **Yes** |
-| `ROOT_USERNAME` | Initial Administrator Username | `admin` | No |
-| `ROOT_PASSWORD` | Initial Administrator Password | `admin123` | No |
-| `DATABASE_URL` | Database connection string (SQLite) | `file:./data/rufi.db` | No |
-
-### Adding Buckets (S3 Providers)
-
-1. Log in as **Admin**.
-2. Navigate to **Buckets** sidebar menu.
-3. Click **Add Bucket** (+).
-4. Fill in your S3 details:
-   - **Name**: Display name for the bucket.
-   - **Endpoint**: 
-     - R2: `https://<account_id>.r2.cloudflarestorage.com`
-     - AWS: `https://s3.<region>.amazonaws.com`
-   - **Access Key & Secret Key**: Your S3 credentials.
-   - **Region**: e.g., `auto`, `us-east-1`.
-5. Click **Test Connection** to verify, then **Create**.
+| Variable | Description | Required |
+|----------|-------------|:--------:|
+| `JWT_SECRET` | Secret for session tokens | ✅ |
+| `ENCRYPTION_KEY` | 32-char key for S3 credentials | ✅ |
+| `ROOT_USERNAME` | Admin username (default: admin) | ❌ |
+| `ROOT_PASSWORD` | Admin password (default: admin123) | ❌ |
+| `DATABASE_URL` | SQLite path (default: file:/app/data/rufi.db) | ❌ |
 
 ---
 
-## 📖 User Guide
+## 🛠️ Development
 
-### File Management
-- **Navigation**: Click folders to navigate. Use breadcrumbs to go back.
-- **Search**: Type in the search bar at the top to filter files in the current folder.
-- **Upload**: Drag files anywhere onto the screen or use the **Upload** button.
-- **Bulk Actions**: Select multiple files (checkbox or Ctrl+Click) to **Delete** or **Download** in bulk.
+<details>
+<summary>Click to expand development instructions</summary>
 
-### Sharing
-- Right-click any file and select **Share**.
-- Set an optional **Password** or **Expiration Time**.
-- Copy the link and send it to anyone!
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/dickyermawan/rufi.git
+   cd rufi
+   npm install
+   ```
+
+2. **Setup Env**
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Database**
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+4. **Run**
+   ```bash
+   npm run dev
+   ```
+</details>
+
+---
+
+## 📈 Star History
+
+<a href="https://star-history.com/#dickyermawan/rufi&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=dickyermawan/rufi&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=dickyermawan/rufi&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=dickyermawan/rufi&type=Date" />
+ </picture>
+</a>
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
 ---
@@ -168,3 +185,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+
+<div align="center">
+  <br />
+  Made with ❤️ by <a href="https://github.com/dickyermawan">Dicky Yermawan</a>
+</div>
