@@ -61,7 +61,10 @@
     "noAccess": "Anda tidak memiliki akses ke bucket manapun",
     "refresh": "Segarkan",
     "listView": "Tampilan daftar",
-    "gridView": "Tampilan grid"
+    "gridView": "Tampilan grid",
+    "selected": "dipilih",
+    "clearSelection": "Hapus pilihan",
+    "deleteConfirmTitle": "Hapus item?"
   },
   "users": {
     "title": "Pengguna",

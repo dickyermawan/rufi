@@ -61,7 +61,10 @@
     "noAccess": "You don't have access to any buckets",
     "refresh": "Refresh",
     "listView": "List view",
-    "gridView": "Grid view"
+    "gridView": "Grid view",
+    "selected": "selected",
+    "clearSelection": "Clear selection",
+    "deleteConfirmTitle": "Delete items?"
   },
   "users": {
     "title": "Users",

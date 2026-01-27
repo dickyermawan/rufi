@@ -18,12 +18,16 @@ import {
   Divider,
   Tooltip,
   TooltipTrigger,
+  AlertDialog,
 } from '@adobe/react-spectrum';
 import FolderAdd from '@spectrum-icons/workflow/FolderAdd';
 import UploadToCloud from '@spectrum-icons/workflow/UploadToCloud';
 import Refresh from '@spectrum-icons/workflow/Refresh';
 import ViewGrid from '@spectrum-icons/workflow/ViewGrid';
 import ViewList from '@spectrum-icons/workflow/ViewList';
+import Delete from '@spectrum-icons/workflow/Delete';
+import Download from '@spectrum-icons/workflow/Download';
+import Close from '@spectrum-icons/workflow/Close';
 import { useDashboard } from '../DashboardLayoutClient';
 import { FileGrid } from '@/components/file-manager/FileGrid';
 import { FileList } from '@/components/file-manager/FileList';
@@ -63,6 +67,8 @@ export default function FilesPage() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [editFile, setEditFile] = useState<FileItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Context menu
   const [contextMenu, setContextMenu] = useState<{
@@ -161,6 +167,7 @@ export default function FilesPage() {
   const handleDelete = async (keys: string[]) => {
     if (!selectedBucket) return;
 
+    setIsDeleting(true);
     try {
       const response = await fetch('/api/files', {
         method: 'DELETE',
@@ -177,8 +184,73 @@ export default function FilesPage() {
       }
     } catch (error) {
       console.error('Failed to delete:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
+
+  const handleBulkDelete = async () => {
+    const keys = Array.from(selectedFiles);
+    if (keys.length === 0) return;
+    await handleDelete(keys);
+  };
+
+  const handleBulkDownload = async () => {
+    if (!selectedBucket) return;
+    
+    const keys = Array.from(selectedFiles);
+    // Filter out folders - only download files
+    const fileKeys = keys.filter(key => {
+      const file = files.find(f => f.key === key);
+      return file && file.type !== 'folder';
+    });
+
+    if (fileKeys.length === 0) return;
+
+    setIsDownloading(true);
+    try {
+      // Download files one by one
+      for (const key of fileKeys) {
+        const file = files.find(f => f.key === key);
+        if (!file) continue;
+
+        const params = new URLSearchParams({
+          bucketId: selectedBucket,
+          key: file.key,
+        });
+        const response = await fetch(`/api/files/download-url?${params}`);
+        const data = await response.json();
+
+        if (data.url) {
+          // Create a temporary link and click it
+          const link = document.createElement('a');
+          link.href = data.url;
+          link.download = file.name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Small delay between downloads
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to download:', error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedFiles(new Set());
+  };
+
+  // Get selected items info
+  const selectedCount = selectedFiles.size;
+  const selectedFileCount = Array.from(selectedFiles).filter(key => {
+    const file = files.find(f => f.key === key);
+    return file && file.type !== 'folder';
+  }).length;
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
@@ -304,6 +376,69 @@ export default function FilesPage() {
           </TooltipTrigger>
         </Flex>
       </Flex>
+
+      {/* Selection Action Bar */}
+      {selectedCount > 0 && (
+        <View
+          padding="size-150"
+          borderRadius="medium"
+          marginBottom="size-200"
+          UNSAFE_style={{
+            backgroundColor: 'var(--spectrum-global-color-blue-100)',
+            border: '1px solid var(--spectrum-global-color-blue-400)',
+          }}
+        >
+          <Flex 
+            alignItems="center" 
+            justifyContent="space-between"
+            wrap="wrap"
+            gap="size-100"
+          >
+            <Flex alignItems="center" gap="size-100">
+              <Text UNSAFE_style={{ fontWeight: 'bold' }}>
+                {selectedCount} {t('selected')}
+              </Text>
+              <ActionButton isQuiet onPress={clearSelection} aria-label={t('clearSelection')}>
+                <Close size="S" />
+              </ActionButton>
+            </Flex>
+
+            <Flex gap="size-100">
+              {/* Download button - only for files, not folders */}
+              {permissions?.canDownload && selectedFileCount > 0 && (
+                <Button
+                  variant="secondary"
+                  onPress={handleBulkDownload}
+                  isPending={isDownloading}
+                >
+                  <Download size="S" />
+                  <Text>{t('download')} ({selectedFileCount})</Text>
+                </Button>
+              )}
+
+              {/* Delete button */}
+              {permissions?.canDelete && (
+                <DialogTrigger>
+                  <Button variant="negative">
+                    <Delete size="S" />
+                    <Text>{t('delete')} ({selectedCount})</Text>
+                  </Button>
+                  <AlertDialog
+                    variant="destructive"
+                    title={t('deleteConfirmTitle')}
+                    primaryActionLabel={t('delete')}
+                    cancelLabel={t('cancel')}
+                    onPrimaryAction={handleBulkDelete}
+                    isPrimaryActionDisabled={isDeleting}
+                  >
+                    {t('deleteMultipleConfirm', { count: selectedCount })}
+                  </AlertDialog>
+                </DialogTrigger>
+              )}
+            </Flex>
+          </Flex>
+        </View>
+      )}
 
       {/* File Browser */}
       {isLoading ? (
