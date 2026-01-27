@@ -52,12 +52,16 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Setup user environment for global npm packages
+# Setup user environment
 USER nextjs
+# Set NPM prefix to user directory and put it FIRST in PATH to override any system globals
 ENV NPM_CONFIG_PREFIX=/home/nextjs/.npm-global
-ENV PATH=$PATH:/home/nextjs/.npm-global/bin
+ENV PATH=/home/nextjs/.npm-global/bin:$PATH
+# Force Prisma to use the correct engine for Alpine (musl) with OpenSSL 3
+# This prevents it from trying to re-download engines at runtime
+ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
 
-# Install prisma locally for the user (avoids permission issues)
+# Install prisma locally for the user
 RUN mkdir -p /home/nextjs/.npm-global && \
     npm install -g prisma@5
 
