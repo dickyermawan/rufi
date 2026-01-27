@@ -188,5 +188,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <div align="center">
   <br />
-  Made with ❤️ by <a href="https://github.com/dickyermawan">Dicky Yermawan</a>
+  Made with ❤️ by <a href="https://github.com/dickyermawan">Dicky Ermawan S.</a>
 </div>
