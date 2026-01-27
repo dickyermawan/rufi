@@ -455,7 +455,7 @@ export default function FilesPage() {
             
             {/* Load More Button */}
             {hasMore && (
-              <Flex justifyContent="center" marginTop="size-200" marginBottom="size-400">
+              <Flex justifyContent="center" marginTop="size-200" marginBottom={selectedCount > 0 ? "size-1000" : "size-400"}>
                 <Button 
                   variant="secondary" 
                   onPress={loadMore} 
@@ -465,6 +465,10 @@ export default function FilesPage() {
                   <Text>Load More</Text>
                 </Button>
               </Flex>
+            )}
+            {/* Padding for floating action bar */}
+            {!hasMore && selectedCount > 0 && (
+              <View height="size-1000" />
             )}
           </View>
         )}
