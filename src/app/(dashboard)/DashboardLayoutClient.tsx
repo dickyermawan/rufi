@@ -135,7 +135,11 @@ export function DashboardLayoutClient({
           <View
             flex={1}
             padding={isMobile ? "size-200" : "size-300"}
-            UNSAFE_style={{ overflow: 'auto' }}
+            UNSAFE_style={{ 
+              overflow: 'auto',
+              display: 'flex',
+              flexDirection: 'column' 
+            }}
           >
             {children}
           </View>

@@ -206,7 +206,7 @@ export function DropZoneWrapper({ bucketId, path, canUpload, onUploadComplete, c
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      style={{ position: 'relative', minHeight: '100%', display: 'flex', flexDirection: 'column' }}
+      style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}
     >
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {children}
@@ -217,10 +217,10 @@ export function DropZoneWrapper({ bucketId, path, canUpload, onUploadComplete, c
         <div
           style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            top: '-16px', // Compensate for parent padding if needed, or stick to 0 if relative works
+            left: '-16px',
+            right: '-16px',
+            bottom: '-16px',
             backgroundColor: 'rgba(0, 120, 212, 0.1)',
             border: '3px dashed var(--spectrum-global-color-blue-500)',
             borderRadius: '8px',
