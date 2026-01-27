@@ -1,6 +1,7 @@
 'use client';
 
-import { View, Text, Checkbox, Flex } from '@adobe/react-spectrum';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, Checkbox, Flex, ActionButton } from '@adobe/react-spectrum';
 import FolderOpen from '@spectrum-icons/workflow/FolderOpen';
 import Document from '@spectrum-icons/workflow/Document';
 import Image from '@spectrum-icons/workflow/Image';
@@ -8,6 +9,7 @@ import FileCode from '@spectrum-icons/workflow/FileCode';
 import FileTxt from '@spectrum-icons/workflow/FileTxt';
 import FileZip from '@spectrum-icons/workflow/FileZip';
 import VideoFilled from '@spectrum-icons/workflow/VideoFilled';
+import ChevronRight from '@spectrum-icons/workflow/ChevronRight';
 import { FileItem } from '@/types';
 
 interface FileGridProps {
@@ -19,33 +21,33 @@ interface FileGridProps {
   onSelectAll: (selected: boolean) => void;
 }
 
-function getFileIcon(file: FileItem) {
+function getFileIcon(file: FileItem, size: 'L' | 'XXL' = 'XXL') {
   if (file.type === 'folder') {
-    return <FolderOpen size="XXL" />;
+    return <FolderOpen size={size} />;
   }
 
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
-    return <Image size="XXL" aria-label="Image file" />;
+    return <Image size={size} aria-label="Image file" />;
   }
   if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) {
-    return <VideoFilled size="XXL" />;
+    return <VideoFilled size={size} />;
   }
   if (['mp3', 'wav', 'ogg', 'flac', 'aac'].includes(ext)) {
-    return <Document size="XXL" />;
+    return <Document size={size} />;
   }
   if (['js', 'ts', 'jsx', 'tsx', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'cs', 'php'].includes(ext)) {
-    return <FileCode size="XXL" />;
+    return <FileCode size={size} />;
   }
   if (['txt', 'md', 'json', 'xml', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'log'].includes(ext)) {
-    return <FileTxt size="XXL" />;
+    return <FileTxt size={size} />;
   }
   if (['zip', 'tar', 'gz', 'rar', '7z', 'bz2'].includes(ext)) {
-    return <FileZip size="XXL" />;
+    return <FileZip size={size} />;
   }
 
-  return <Document size="XXL" />;
+  return <Document size={size} />;
 }
 
 export function FileGrid({
@@ -56,6 +58,44 @@ export function FileGrid({
   onContextMenu,
   onSelectAll,
 }: FileGridProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  const lastTapRef = useRef<{ time: number; key: string }>({ time: 0, key: '' });
+
+  useEffect(() => {
+    const checkMobile = () => {
+      // Check if touch device or small screen
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleClick = (file: FileItem, e: React.MouseEvent) => {
+    if (isMobile) {
+      const now = Date.now();
+      const lastTap = lastTapRef.current;
+      
+      // Double-tap detection for mobile (within 300ms)
+      if (lastTap.key === file.key && now - lastTap.time < 300) {
+        onFileDoubleClick(file);
+        lastTapRef.current = { time: 0, key: '' };
+        return;
+      }
+      
+      lastTapRef.current = { time: now, key: file.key };
+      onFileClick(file, e);
+    } else {
+      onFileClick(file, e);
+    }
+  };
+
+  const handleOpenFolder = (file: FileItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onFileDoubleClick(file);
+  };
+
   const allSelected = files.length > 0 && files.every((f) => selectedFiles.has(f.key));
   const someSelected = files.some((f) => selectedFiles.has(f.key)) && !allSelected;
 
@@ -88,8 +128,8 @@ export function FileGrid({
             }}
           >
             <div
-              onClick={(e) => onFileClick(file, e)}
-              onDoubleClick={() => onFileDoubleClick(file)}
+              onClick={(e) => handleClick(file, e)}
+              onDoubleClick={() => !isMobile && onFileDoubleClick(file)}
               onContextMenu={(e) => onContextMenu(e, file)}
               style={{
                 display: 'flex',
@@ -110,6 +150,22 @@ export function FileGrid({
               >
                 {file.name}
               </Text>
+              
+              {/* Mobile: Show open button for folders */}
+              {isMobile && file.type === 'folder' && (
+                <ActionButton
+                  isQuiet
+                  onPress={(e) => handleOpenFolder(file, e as unknown as React.MouseEvent)}
+                  UNSAFE_style={{
+                    marginTop: '4px',
+                    backgroundColor: 'var(--spectrum-global-color-blue-100)',
+                    borderRadius: '16px',
+                  }}
+                >
+                  <ChevronRight size="S" />
+                  <Text>Buka</Text>
+                </ActionButton>
+              )}
             </div>
           </View>
         ))}
