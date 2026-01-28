@@ -14,44 +14,102 @@ import { FileItem } from '@/types';
 interface FileGridProps {
   files: FileItem[];
   selectedFiles: Set<string>;
+  bucketId: string;
   onFileClick: (file: FileItem, event: React.MouseEvent) => void;
   onFileDoubleClick: (file: FileItem) => void;
   onContextMenu: (e: React.MouseEvent, file: FileItem) => void;
   onSelectAll: (selected: boolean) => void;
 }
 
-function getFileIcon(file: FileItem) {
+function getFileIcon(file: FileItem, size: 'L' | 'XXL' = 'XXL') {
   if (file.type === 'folder') {
-    return <FolderOpen size="XXL" />;
+    return <FolderOpen size={size} />;
   }
 
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
-    return <Image size="XXL" aria-label="Image file" />;
+    return <Image size={size} aria-label="Image file" />;
   }
+  // ... rest of extensions
   if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) {
-    return <VideoFilled size="XXL" />;
+    return <VideoFilled size={size} />;
   }
   if (['mp3', 'wav', 'ogg', 'flac', 'aac'].includes(ext)) {
-    return <Document size="XXL" />;
+    return <Document size={size} />;
   }
   if (['js', 'ts', 'jsx', 'tsx', 'py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'cs', 'php'].includes(ext)) {
-    return <FileCode size="XXL" />;
+    return <FileCode size={size} />;
   }
   if (['txt', 'md', 'json', 'xml', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'log'].includes(ext)) {
-    return <FileTxt size="XXL" />;
+    return <FileTxt size={size} />;
   }
   if (['zip', 'tar', 'gz', 'rar', '7z', 'bz2'].includes(ext)) {
-    return <FileZip size="XXL" />;
+    return <FileZip size={size} />;
   }
 
-  return <Document size="XXL" />;
+  return <Document size={size} />;
+}
+
+function FileThumbnail({ file, bucketId, size = 'XXL' }: { file: FileItem, bucketId: string, size?: 'L' | 'XXL' }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext);
+
+  useEffect(() => {
+    if (!isImage || !ref.current || error || url) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        const params = new URLSearchParams({ bucketId, key: file.key });
+        fetch(`/api/files/download-url?${params}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.url) setUrl(data.url);
+            else setError(true);
+          })
+          .catch(() => setError(true));
+        observer.disconnect();
+      }
+    });
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [file.key, bucketId, error, url, isImage]);
+
+  if (!isImage || error || !url) {
+    return <div ref={ref}>{getFileIcon(file, size)}</div>;
+  }
+
+  return (
+    <div style={{ 
+      width: size === 'XXL' ? 64 : 32, 
+      height: size === 'XXL' ? 64 : 32, 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      overflow: 'hidden'
+    }}>
+      <img 
+        src={url} 
+        alt={file.name} 
+        style={{ 
+          maxWidth: '100%', 
+          maxHeight: '100%', 
+          objectFit: 'contain',
+          borderRadius: 4
+        }} 
+      />
+    </div>
+  );
 }
 
 export function FileGrid({
   files,
   selectedFiles,
+  bucketId,
   onFileClick,
   onFileDoubleClick,
   onContextMenu,
@@ -138,7 +196,7 @@ export function FileGrid({
                 gap: '8px',
               }}
             >
-              {getFileIcon(file)}
+              <FileThumbnail file={file} bucketId={bucketId} />
               <Text
                 UNSAFE_style={{
                   textAlign: 'center',

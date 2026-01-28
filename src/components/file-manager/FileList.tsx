@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 interface FileListProps {
   files: FileItem[];
   selectedFiles: Set<string>;
+  bucketId?: string;
   onFileClick: (file: FileItem, event: React.MouseEvent) => void;
   onFileDoubleClick: (file: FileItem) => void;
   onContextMenu: (e: React.MouseEvent, file: FileItem) => void;
@@ -37,6 +38,7 @@ function formatDate(date?: Date): string {
 export function FileList({
   files,
   selectedFiles,
+  bucketId,
   onFileClick,
   onFileDoubleClick,
   onContextMenu,

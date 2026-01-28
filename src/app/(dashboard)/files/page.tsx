@@ -494,6 +494,7 @@ export default function FilesPage() {
               <FileGrid
                 files={files}
                 selectedFiles={selectedFiles}
+                bucketId={selectedBucket}
                 onFileClick={handleFileClick}
                 onFileDoubleClick={handleFileDoubleClick}
                 onContextMenu={handleContextMenu}
