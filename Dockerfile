@@ -59,7 +59,7 @@ ENV HOSTNAME="0.0.0.0"
 # Default database URL if not provided
 ENV DATABASE_URL="file:/app/data/rufi.db"
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Run migrations and start the server
 CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
