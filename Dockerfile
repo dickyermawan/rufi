@@ -38,6 +38,12 @@ RUN apk add --no-cache openssl su-exec
 
 COPY --from=builder /app/public ./public
 
+# Automatically leverage output traces to reduce image size
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy prisma folder to ensure schema.prisma is available for migrations
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
 # Setup user environment
 # We stay as root initially to fix permissions in entrypoint
 ENV NPM_CONFIG_PREFIX=/home/nextjs/.npm-global
