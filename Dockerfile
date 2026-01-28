@@ -33,34 +33,24 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Install openssl for Prisma
-RUN apk add --no-cache openssl
+# Install openssl for Prisma and su-exec for entrypoint
+RUN apk add --no-cache openssl su-exec
 
 COPY --from=builder /app/public ./public
 
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Create data directory for SQLite persistence
-RUN mkdir -p /app/data
-RUN chown -R nextjs:nodejs /app/data
-
-# Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-
 # Setup user environment
-USER nextjs
-# Set NPM prefix to user directory and put it FIRST in PATH to override any system globals
+# We stay as root initially to fix permissions in entrypoint
 ENV NPM_CONFIG_PREFIX=/home/nextjs/.npm-global
 ENV PATH=/home/nextjs/.npm-global/bin:$PATH
 
-# Install prisma locally for the user with unsafe-perm to ensure postinstall scripts run
-# This is critical for downloading the correct engines for the architecture
+# Install prisma locally for the user with unsafe-perm
 RUN mkdir -p /home/nextjs/.npm-global && \
-    npm install -g prisma@5 --unsafe-perm
+    npm install -g prisma@5 --unsafe-perm && \
+    chown -R nextjs:nodejs /home/nextjs
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 3000
 
@@ -68,6 +58,8 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 # Default database URL if not provided
 ENV DATABASE_URL="file:/app/data/rufi.db"
+
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Run migrations and start the server
 CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
