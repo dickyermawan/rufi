@@ -87,7 +87,7 @@ version: '3.8'
 
 services:
   rufi:
-    image: dickyermawan/rufi:v1.0.0
+    image: dickyermawan/rufi
     container_name: rufi
     ports:
       - "3000:3000"
